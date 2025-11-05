@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: fubar-server
+  namespace: fubar
+spec:
+  selector:
+    app: fubar-server
+  ports:
+    - protocol: TCP
+      port: 9000        # port clients (internal pods) connect to
+      targetPort: 80    # real nginx port inside container
+
