@@ -1,0 +1,85 @@
+#Namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: my-namespace
+---
+
+#Secret
+apiVersion: v1
+kind: Secret
+metadata:
+  name: my-secret
+  namespace: my-namespace
+type: Opaque
+data:
+  username: bXl1c2Vy
+  password: bXlwYXNz
+
+---
+#ConfigMap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: my-config
+  namespace: my-namespace
+data:
+  APP_MODE: "production"
+  LOG_SCALE: "info"
+  WELCOME_MESSAGE: "welcome to my-app"
+
+---
+#Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app-deployment
+  namespace: my-namespace
+  labels:
+    app: my-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: my-app
+  template:
+    metadata:
+      labels:
+        app: my-app
+    spec:
+      containers:
+      - name: my-container
+        image: nginx:latest
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: secret-volume
+          mountPath: /etc/secret-data
+          readOnly: true
+        envFrom:
+        - configMapRef:
+            name: my-config
+        - secretRef:
+            name: my-secret
+      volumes:
+      - name: secret-volume
+        secret:
+          secretName: my-secret
+
+---
+#service
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-app-service
+  namespace: my-namespace
+  labels:
+    app: my-app
+spec:
+  type: LoadBalancer
+  selector:
+    app: my-app
+  ports:
+  - port: 80
+    targetPort: 80
+    protocol: TCP
