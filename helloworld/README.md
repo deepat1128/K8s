@@ -23,3 +23,9 @@ kubectl port-forward --address 0.0.0.0 svc/argocd-server -n argocd 9443:443, htt
 worked
 “Listen on all network interfaces (0.0.0.0), not just localhost.”
 
+If port forwarding is not required, then
+Edit the svc,
+kubectl edit svc argocd-server -n argocd
+type cluster ip to LoadBalancer.
+Then run, minikube tunnel
+This will expose it with an external IP that you can always use in the browser.
