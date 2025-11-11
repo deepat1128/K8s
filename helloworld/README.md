@@ -17,4 +17,9 @@ http://externalIP:80
 curl http://externalIP:80
 
 
+If 
+http://minikubeIP:NodePort this doesn't work, try the following.
+kubectl port-forward --address 0.0.0.0 svc/argocd-server -n argocd 9443:443, https://VMPublicIP:9443 , 
+worked
+“Listen on all network interfaces (0.0.0.0), not just localhost.”
 
