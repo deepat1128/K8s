@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: deepadeploy
+  name: deepadeploy
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: deepadeploy
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: deepadeploy
+    spec:
+      containers:
+      - image: deepat1128/gitdemo1imagedt:1.0
+        name: gitdemo1imagedt
+        ports:
+        - containerPort: 9090
+        resources: {}
+status: {}
