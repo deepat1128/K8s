@@ -1,0 +1,88 @@
+ns-stclass-hlsvc-statefulset.yaml
+
+# ----------------------------------------------------
+# 1️⃣ Namespace
+# ----------------------------------------------------
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: database
+---
+# ----------------------------------------------------
+# 2️⃣ StorageClass (for dynamic PV creation)
+# ----------------------------------------------------
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: standard-sc
+provisioner: kubernetes.io/azure-disk  # ✅ Azure managed disk provisioner, defines which storage backend Kubernetes should use to provision volumes.
+parameters:
+  storageaccounttype: Standard_LRS     # Standard SSD
+  kind: Managed                        # Managed disk, Azure automatically handles replication and reliability.
+volumeBindingMode: WaitForFirstConsumer # Kubernetes waits until a Pod that uses the PVC is scheduled, alternate:Immediate
+reclaimPolicy: Retain  # The volume (Azure Disk) is kept, even after the PVC is deleted, alternate:Delete
+---
+# ----------------------------------------------------
+# 3️⃣ Headless Service (for stable DNS per Pod)
+# ----------------------------------------------------
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongo-headless
+  namespace: database
+  labels:
+    app: mongo
+spec:
+  clusterIP: None           # <-- Important: makes it headless
+  ports:
+  - port: 27017
+    name: mongodb
+  selector:
+    app: mongo
+---
+# ----------------------------------------------------
+# 4️⃣ StatefulSet (MongoDB cluster) Used for databases or stateful apps like MongoDB, Cassandra, etc.
+# ----------------------------------------------------
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mongo
+  namespace: database
+  labels:
+    app: mongo
+spec:
+  serviceName: "mongo-headless"  # Must match the Service name
+  replicas: 3          #Runs 3 Pods → mongo-0, mongo-1, mongo-2.
+  selector:           #This tells the StatefulSet which Pods it manages.
+    matchLabels:
+      app: mongo
+  template:     #pod template
+    metadata:
+      labels:
+        app: mongo
+    spec:
+      terminationGracePeriodSeconds: 10
+      containers:
+      - name: mongo
+        image: mongo:latest
+        ports:
+        - containerPort: 27017
+          name: mongodb
+        volumeMounts:
+        - name: mongo-data
+          mountPath: /data/db
+        env:
+        - name: MONGO_INITDB_ROOT_USERNAME
+          value: root
+        - name: MONGO_INITDB_ROOT_PASSWORD
+          value: password123
+  
+volumeClaimTemplates:
+  - metadata:
+      name: mongo-data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      storageClassName: standard-sc
+      resources:
+        requests:
+          storage: 2Gi
